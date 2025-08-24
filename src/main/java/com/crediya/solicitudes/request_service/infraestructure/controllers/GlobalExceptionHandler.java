@@ -21,6 +21,13 @@ public class GlobalExceptionHandler {
         return Mono.just(ex.getMessage());
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public Mono<String> handleIllegalStateException(IllegalStateException ex) {
+        log.warn("Recurso no encontrado: {}", ex.getMessage());
+        return Mono.just(ex.getMessage());
+    }
+
     // Puedes agregar más manejadores para otros tipos de excepciones.
     // Ejemplo para manejar errores genéricos y no deseados.
     @ExceptionHandler(Exception.class)
