@@ -2,7 +2,7 @@ package com.crediya.solicitudes.request_service.infraestructure.controllers;
 
 import com.crediya.solicitudes.request_service.application.SolicitudService;
 import com.crediya.solicitudes.request_service.domain.model.Solicitud;
-import com.crediya.solicitudes.request_service.infraestructure.adapter.SolicitudMapper;
+import com.crediya.solicitudes.request_service.infraestructure.adapter.mappers.SolicitudMapper;
 import com.crediya.solicitudes.request_service.infraestructure.dto.SolicitudDTO;
 import com.crediya.solicitudes.request_service.infraestructure.dto.SolicitudResponseDTO;
 import io.swagger.v3.oas.annotations.Operation;

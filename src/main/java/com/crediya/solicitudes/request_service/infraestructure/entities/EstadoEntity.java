@@ -18,6 +18,7 @@ public class EstadoEntity {
     @Id
     @Column("id_estado")
     private UUID id;
+    @Column("nombre")
     private String nombre;
     private String descripcion;
 }

@@ -2,7 +2,11 @@ package com.crediya.solicitudes.request_service.infraestructure.adapter;
 
 import com.crediya.solicitudes.request_service.domain.model.Solicitud;
 import com.crediya.solicitudes.request_service.domain.repository.SolicitudRepositoryPort;
+import com.crediya.solicitudes.request_service.infraestructure.adapter.mappers.EstadoMapper;
+import com.crediya.solicitudes.request_service.infraestructure.adapter.mappers.SolicitudMapper;
 import com.crediya.solicitudes.request_service.infraestructure.adapter.repository.SolicitudR2dbcRepository;
+import com.crediya.solicitudes.request_service.infraestructure.entities.EstadoEntity;
+import com.crediya.solicitudes.request_service.infraestructure.entities.SolicitudEntity;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Flux;
@@ -19,17 +23,24 @@ public class SolicitudAdapter implements SolicitudRepositoryPort {
 
     @Override
     public Mono<Solicitud> save(Solicitud entity) {
-        return repository.save(entity);
+         /*return Mono.just(entity)
+                .map(SolicitudMapper::toEntity) // Convierte el modelo de dominio a una entidad de infraestructura
+                .flatMap(repository::save) // Guarda la entidad en la base de datos
+                .map(SolicitudMapper::toDomain); */
+
+        SolicitudEntity  solEntity = SolicitudMapper.toEntity(entity);
+        repository.save(solEntity).map(SolicitudMapper::toDomain).subscribe(); //no entra a update
+        return Mono.just(entity);
     }
 
     @Override
     public Mono<Solicitud> findById(UUID id) {
-        return repository.findById(id);
+        return repository.findById(id).map(SolicitudMapper::toDomain);
     }
 
     @Override
     public Flux<Solicitud> findAll() {
-        return repository.findAll();
+        return repository.findAll().map(SolicitudMapper::toDomain);
     }
 
     @Override
@@ -39,6 +50,6 @@ public class SolicitudAdapter implements SolicitudRepositoryPort {
 
     @Override
     public Flux<Solicitud> findByEmail(String email) {
-        return repository.findByEmail(email);
+        return repository.findByEmail(email).map(SolicitudMapper::toDomain);
     }
 }

@@ -16,4 +16,5 @@ public class SolicitudDTO {
     private Integer plazo;
     private String email;
     private UUID idTipoPrestamo;
+    private UUID idEstado;
 }
