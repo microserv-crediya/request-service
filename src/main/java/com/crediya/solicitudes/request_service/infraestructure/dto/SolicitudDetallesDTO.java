@@ -8,5 +8,5 @@ import lombok.Builder;
 public class SolicitudDetallesDTO {
     private String nombreEstado;
     private String nombreTipoPrestamo;
-    private String docuemntoIdentidad;
+    private String documentoIdentidad;
 }
