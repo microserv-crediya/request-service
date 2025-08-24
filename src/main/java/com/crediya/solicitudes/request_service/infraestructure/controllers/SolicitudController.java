@@ -53,7 +53,8 @@ public class SolicitudController {
                                     return SolicitudMapper.toResponseDto(
                                             savedSolicitud,
                                             details.getNombreEstado(),
-                                            details.getNombreTipoPrestamo()
+                                            details.getNombreTipoPrestamo(),
+                                            solicitud.getDocumentoIdentidad()
                                     );
                                 })
                 );
