@@ -19,4 +19,5 @@ public class Solicitud {
     private String email;
     private UUID idEstado;
     private UUID idTipoPrestamo;
+    private String documentoIdentidad;
 }
