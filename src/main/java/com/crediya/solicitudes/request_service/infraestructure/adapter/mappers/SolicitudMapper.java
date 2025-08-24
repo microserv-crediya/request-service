@@ -18,6 +18,7 @@ public class SolicitudMapper {
                 .email(dto.getEmail())
                 .idEstado(dto.getIdEstado())
                 .idTipoPrestamo(dto.getIdTipoPrestamo())
+                .documentoIdentidad(dto.getDocumentoIdentidad())
                 .build();
     }
 
@@ -30,6 +31,7 @@ public class SolicitudMapper {
                 .email(entity.getEmail())
                 .idEstado(entity.getIdEstado())
                 .idTipoPrestamo(entity.getIdTipoPrestamo())
+                .documentoIdentidad(entity.getDocumentoIdentidad())
                 .build();
     }
 
@@ -42,10 +44,11 @@ public class SolicitudMapper {
                 .email(domain.getEmail())
                 .idEstado(domain.getIdEstado())
                 .idTipoPrestamo(domain.getIdTipoPrestamo())
+                .documentoIdentidad(domain.getDocumentoIdentidad())
                 .build();
     }
 
-    public static SolicitudResponseDTO toResponseDto(Solicitud solicitud, String estadoName, String tipoPrestamoName) {
+    public static SolicitudResponseDTO toResponseDto(Solicitud solicitud, String estadoName, String tipoPrestamoName, String documentoIdentidad) {
         return SolicitudResponseDTO.builder()
                 .id(solicitud.getId())
                 .monto(solicitud.getMonto())
@@ -53,6 +56,7 @@ public class SolicitudMapper {
                 .email(solicitud.getEmail())
                 .estado(estadoName)
                 .tipoPrestamo(tipoPrestamoName)
+                .documentoIdentidad(documentoIdentidad)
                 .build();
     }
 }

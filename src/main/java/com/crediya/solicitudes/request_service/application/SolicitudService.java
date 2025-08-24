@@ -6,6 +6,7 @@ import com.crediya.solicitudes.request_service.domain.model.TipoPrestamo;
 import com.crediya.solicitudes.request_service.domain.repository.SolicitudRepositoryPort;
 import com.crediya.solicitudes.request_service.domain.repository.TipoPrestamoRepositoryPort;
 import com.crediya.solicitudes.request_service.domain.repository.EstadoRepositoryPort;
+import com.crediya.solicitudes.request_service.infraestructure.client.AutenticacionWebClient;
 import com.crediya.solicitudes.request_service.infraestructure.dto.SolicitudDetallesDTO;
 import com.crediya.solicitudes.request_service.infraestructure.entities.EstadoEntity;
 import com.crediya.solicitudes.request_service.infraestructure.entities.TipoPrestamoEntity;
@@ -19,14 +20,17 @@ import java.util.UUID;
 @Slf4j
 public class SolicitudService {
     private final SolicitudRepositoryPort solicitudRepositoryPort;
-    private final TipoPrestamoRepositoryPort tipoPrestamoRepositoryPort;
+    private final AutenticacionWebClient autenticacionWebClient;
     private final EstadoRepositoryPort estadoRepositoryPort;
+    private final TipoPrestamoRepositoryPort tipoPrestamoRepositoryPort;
     private static final String ESTADO_INICIAL = "PENDIENTE_REVISION";
 
-    public SolicitudService(SolicitudRepositoryPort solicitudRepositoryPort, TipoPrestamoRepositoryPort tipoPrestamoRepositoryPort, EstadoRepositoryPort estadoRepositoryPort) {
+    public SolicitudService(SolicitudRepositoryPort solicitudRepositoryPort, AutenticacionWebClient autenticacionWebClient,
+                            EstadoRepositoryPort estadoRepositoryPort, TipoPrestamoRepositoryPort tipoPrestamoRepositoryPort) {
         this.solicitudRepositoryPort = solicitudRepositoryPort;
-        this.tipoPrestamoRepositoryPort = tipoPrestamoRepositoryPort;
+        this.autenticacionWebClient = autenticacionWebClient;
         this.estadoRepositoryPort = estadoRepositoryPort;
+        this.tipoPrestamoRepositoryPort = tipoPrestamoRepositoryPort;
     }
 
 
@@ -38,19 +42,22 @@ public class SolicitudService {
 
     public Mono<Solicitud> createSolicitud(Solicitud solicitud) {
         log.info("***** SolicitudService - Iniciando el proceso de creación.");
-        return tipoPrestamoRepositoryPort.findById(solicitud.getIdTipoPrestamo())
-                .log("***** SolicitudService - Buscando el tipo de préstamo con ID: " + solicitud.getIdTipoPrestamo())
-                .switchIfEmpty(Mono.error(new IllegalArgumentException("El tipo de préstamo seleccionado no existe.")))
-                .flatMap(tipoPrestamo -> {
-                    log.info("***** SolicitudService - Tipo de préstamo encontrado.");
+
+        return autenticacionWebClient.validarUsuario(solicitud.getDocumentoIdentidad())
+                .flatMap(usuarioExiste -> {
+                    if (Boolean.FALSE.equals(usuarioExiste)) {
+                        return Mono.error(new IllegalArgumentException("El documento proporcionado no existe, no puede continuar con su solicitud."));
+                    }
+
                     return estadoRepositoryPort.findByNombre(ESTADO_INICIAL)
                             .log("***** SolicitudService - Buscando el estado inicial: " + ESTADO_INICIAL)
-                            .switchIfEmpty(Mono.error(new IllegalStateException("El estado inicial '" + ESTADO_INICIAL + "' no se encontró en la base de datos.")))
+                            .switchIfEmpty(Mono.error(new IllegalStateException("El estado inicial '" + ESTADO_INICIAL + "' no se encontró.")))
+
                             .flatMap(estado -> {
                                 solicitud.setIdEstado(estado.getId());
                                 log.info("***** SolicitudService - Asignando el estado inicial a la solicitud.");
                                 return solicitudRepositoryPort.save(solicitud)
-                                        .log("***** SolicitudService - Guardando la solicitud.");
+                                .log("***** SolicitudService - Guardando la solicitud.");
                             });
                 })
                 .doOnError(error -> log.error("***** ERROR en el flujo de solicitud: " + error.getMessage()));

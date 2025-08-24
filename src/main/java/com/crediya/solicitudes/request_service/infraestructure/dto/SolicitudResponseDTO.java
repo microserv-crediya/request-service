@@ -18,4 +18,6 @@ public class SolicitudResponseDTO {
     private String email;
     private String estado;
     private String tipoPrestamo;
+    private String documentoIdentidad;
+
 }

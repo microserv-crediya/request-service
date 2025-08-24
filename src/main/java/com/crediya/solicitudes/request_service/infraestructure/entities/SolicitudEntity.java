@@ -26,4 +26,6 @@ public class SolicitudEntity {
     private UUID idEstado;
     @Column("id_tipo_prestamo")
     private UUID idTipoPrestamo;
+    private String documentoIdentidad;
+
 }
