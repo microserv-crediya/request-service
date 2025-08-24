@@ -12,9 +12,11 @@ import com.crediya.solicitudes.request_service.infraestructure.entities.EstadoEn
 import com.crediya.solicitudes.request_service.infraestructure.entities.TipoPrestamoEntity;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 import java.util.UUID;
+
 
 @Service
 @Slf4j
@@ -40,6 +42,7 @@ public class SolicitudService {
                 .log("***** SolicitudService - Resultado de la prueba de conexión a la base de datos");
     }
 
+    @Transactional
     public Mono<Solicitud> createSolicitud(Solicitud solicitud) {
         log.info("***** SolicitudService - Iniciando el proceso de creación.");
 
@@ -74,4 +77,6 @@ public class SolicitudService {
                         .nombreTipoPrestamo(tuple.getT2().getNombre())
                         .build());
     }
+
+
 }

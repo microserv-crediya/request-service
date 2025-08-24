@@ -48,6 +48,7 @@ public class SolicitudController {
         return solicitudService.createSolicitud(solicitud)
                 .flatMap(savedSolicitud ->
                         solicitudService.getDetailsForResponse(savedSolicitud)
+                                .switchIfEmpty(Mono.error(new IllegalStateException("No se encontraron detalles para la solicitud")))
                                 .map(details -> {
                                     log.info("***** SolicitudController - Solicitud procesada y lista para la respuesta.");
                                     return SolicitudMapper.toResponseDto(
@@ -59,4 +60,6 @@ public class SolicitudController {
                                 })
                 );
     }
+
+
 }
