@@ -7,14 +7,17 @@ import com.crediya.solicitudes.request_service.domain.repository.SolicitudReposi
 import com.crediya.solicitudes.request_service.domain.repository.TipoPrestamoRepositoryPort;
 import com.crediya.solicitudes.request_service.domain.repository.EstadoRepositoryPort;
 import com.crediya.solicitudes.request_service.infraestructure.dto.SolicitudDetallesDTO;
+import com.crediya.solicitudes.request_service.infraestructure.entities.EstadoEntity;
+import com.crediya.solicitudes.request_service.infraestructure.entities.TipoPrestamoEntity;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 import java.util.UUID;
 
 @Service
+@Slf4j
 public class SolicitudService {
-
     private final SolicitudRepositoryPort solicitudRepositoryPort;
     private final TipoPrestamoRepositoryPort tipoPrestamoRepositoryPort;
     private final EstadoRepositoryPort estadoRepositoryPort;
@@ -26,47 +29,39 @@ public class SolicitudService {
         this.estadoRepositoryPort = estadoRepositoryPort;
     }
 
-    /**
-     * Crea una nueva solicitud de préstamo, valida el tipo de préstamo y asigna un estado inicial.
-     * @param solicitud La entidad de la solicitud a crear.
-     * @return Un Mono que emite la solicitud guardada.
-     */
+
+    public Mono<Boolean> checkDbConnection() {
+        return estadoRepositoryPort.findByNombre(ESTADO_INICIAL)
+                .hasElement() // Retorna `true` si encuentra un elemento, `false` si no.
+                .log("***** SolicitudService - Resultado de la prueba de conexión a la base de datos");
+    }
+
     public Mono<Solicitud> createSolicitud(Solicitud solicitud) {
-        return Mono.just(solicitud)
-                .log("SolicitudService.createSolicitud - Inicia el proceso de creación")
-                .flatMap(s -> tipoPrestamoRepositoryPort.findById(s.getIdTipoPrestamo())
-                        .log("SolicitudService - Buscando tipo de préstamo: " + s.getIdTipoPrestamo())
-                )
+        log.info("***** SolicitudService - Iniciando el proceso de creación.");
+        return tipoPrestamoRepositoryPort.findById(solicitud.getIdTipoPrestamo())
+                .log("***** SolicitudService - Buscando el tipo de préstamo con ID: " + solicitud.getIdTipoPrestamo())
                 .switchIfEmpty(Mono.error(new IllegalArgumentException("El tipo de préstamo seleccionado no existe.")))
                 .flatMap(tipoPrestamo -> {
-                    // Validación del monto (ejemplo de lógica de negocio)
-                    if (solicitud.getMonto().compareTo(tipoPrestamo.getMontoMinimo()) < 0 || solicitud.getMonto().compareTo(tipoPrestamo.getMontoMaximo()) > 0) {
-                        return Mono.error(new IllegalArgumentException("El monto de la solicitud está fuera del rango permitido."));
-                    }
-
+                    log.info("***** SolicitudService - Tipo de préstamo encontrado.");
                     return estadoRepositoryPort.findByNombre(ESTADO_INICIAL)
-                            .log("SolicitudService - Buscando estado inicial: " + ESTADO_INICIAL)
+                            .log("***** SolicitudService - Buscando el estado inicial: " + ESTADO_INICIAL)
                             .switchIfEmpty(Mono.error(new IllegalStateException("El estado inicial '" + ESTADO_INICIAL + "' no se encontró en la base de datos.")))
                             .flatMap(estado -> {
                                 solicitud.setIdEstado(estado.getId());
+                                log.info("***** SolicitudService - Asignando el estado inicial a la solicitud.");
                                 return solicitudRepositoryPort.save(solicitud)
-                                        .log("SolicitudService - Guardando la solicitud con el estado inicial");
+                                        .log("***** SolicitudService - Guardando la solicitud.");
                             });
                 })
-                .doOnError(error -> System.err.println("Error en el flujo de solicitud: " + error.getMessage()));
+                .doOnError(error -> log.error("***** ERROR en el flujo de solicitud: " + error.getMessage()));
     }
 
-    /**
-     * Obtiene el nombre del estado y del tipo de préstamo y los empaqueta en un DTO.
-     */
     public Mono<SolicitudDetallesDTO> getDetailsForResponse(Solicitud solicitud) {
-        Mono<Estado> estadoMono = estadoRepositoryPort.findById(solicitud.getIdEstado())
-                .log("getDetailsForResponse - Buscando el estado por ID");
-        Mono<TipoPrestamo> tipoMono = tipoPrestamoRepositoryPort.findById(solicitud.getIdTipoPrestamo())
-                .log("getDetailsForResponse - Buscando el tipo de préstamo por ID");
-
+        log.info("***** getDetailsForResponse - Preparando la respuesta.");
+        Mono<Estado> estadoMono = estadoRepositoryPort.findById(solicitud.getIdEstado());
+        Mono<TipoPrestamo> tipoMono = tipoPrestamoRepositoryPort.findById(solicitud.getIdTipoPrestamo());
         return Mono.zip(estadoMono, tipoMono)
-                .log("getDetailsForResponse - Combinando resultados")
+                .log("***** getDetailsForResponse - Combinando los resultados para el DTO.")
                 .map(tuple -> SolicitudDetallesDTO.builder()
                         .nombreEstado(tuple.getT1().getNombre())
                         .nombreTipoPrestamo(tuple.getT2().getNombre())

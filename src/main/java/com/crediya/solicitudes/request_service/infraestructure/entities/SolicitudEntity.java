@@ -17,7 +17,7 @@ import java.util.UUID;
 @Table("solicitud")
 public class SolicitudEntity {
     @Id
-    @Column("id_solicitud")
+    @Column("id")
     private UUID id;
     private BigDecimal monto;
     private Integer plazo;

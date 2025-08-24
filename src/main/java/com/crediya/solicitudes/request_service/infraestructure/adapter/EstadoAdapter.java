@@ -2,7 +2,9 @@ package com.crediya.solicitudes.request_service.infraestructure.adapter;
 
 import com.crediya.solicitudes.request_service.domain.model.Estado;
 import com.crediya.solicitudes.request_service.domain.repository.EstadoRepositoryPort;
+import com.crediya.solicitudes.request_service.infraestructure.adapter.mappers.EstadoMapper;
 import com.crediya.solicitudes.request_service.infraestructure.adapter.repository.EstadoR2dbcRepository;
+import com.crediya.solicitudes.request_service.infraestructure.entities.EstadoEntity;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Flux;
@@ -18,18 +20,22 @@ public class EstadoAdapter implements EstadoRepositoryPort {
     }
 
     @Override
-    public Mono<Estado> save(Estado entity) {
-        return repository.save(entity);
+    public Mono<Estado> save(Estado estado) {
+        EstadoEntity entity = EstadoMapper.toEntity(estado);
+        return repository.save(entity)
+                .map(EstadoMapper::toDomain);
     }
 
     @Override
     public Mono<Estado> findById(UUID id) {
-        return repository.findById(id);
+        return repository.findById(id)
+                .map(EstadoMapper::toDomain);
     }
 
     @Override
     public Flux<Estado> findAll() {
-        return repository.findAll();
+        return repository.findAll()
+                .map(EstadoMapper::toDomain);
     }
 
     @Override
@@ -39,6 +45,7 @@ public class EstadoAdapter implements EstadoRepositoryPort {
 
     @Override
     public Mono<Estado> findByNombre(String nombre) {
-        return repository.findByNombre(nombre);
+        return repository.findByNombre(nombre)
+                .map(EstadoMapper::toDomain);
     }
 }

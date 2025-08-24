@@ -19,6 +19,7 @@ public class TipoPrestamoEntity {
     @Id
     @Column("id_tipo_prestamo")
     private UUID id;
+    @Column("nombre")
     private String nombre;
     private BigDecimal montoMinimo;
     private BigDecimal montoMaximo;
