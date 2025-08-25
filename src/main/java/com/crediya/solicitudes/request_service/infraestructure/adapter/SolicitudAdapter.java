@@ -23,14 +23,10 @@ public class SolicitudAdapter implements SolicitudRepositoryPort {
 
     @Override
     public Mono<Solicitud> save(Solicitud entity) {
-         /*return Mono.just(entity)
+         return Mono.just(entity)
                 .map(SolicitudMapper::toEntity) // Convierte el modelo de dominio a una entidad de infraestructura
                 .flatMap(repository::save) // Guarda la entidad en la base de datos
-                .map(SolicitudMapper::toDomain); */
-
-        SolicitudEntity  solEntity = SolicitudMapper.toEntity(entity);
-        repository.save(solEntity).map(SolicitudMapper::toDomain).subscribe(); //no entra a update
-        return Mono.just(entity);
+                .map(SolicitudMapper::toDomain);
     }
 
     @Override
