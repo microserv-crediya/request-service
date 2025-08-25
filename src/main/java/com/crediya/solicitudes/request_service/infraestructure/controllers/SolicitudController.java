@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
@@ -45,27 +46,22 @@ public class SolicitudController {
     public Mono<SolicitudResponseDTO> createSolicitud(@RequestBody SolicitudRequestDTO requestDTO) {
         log.info("***** SolicitudController - Recibiendo una nueva solicitud de préstamo.");
 
-        return solicitudService.findByNamePrestamo(requestDTO.getTipoPrestamo())
-                .switchIfEmpty(Mono.error(new IllegalArgumentException("El tipo de préstamo '" + requestDTO.getTipoPrestamo() + "' no existe.")))
-                .flatMap(tipoPrestamo -> {
-                    Solicitud solicitud = SolicitudMapper.toDomainRequest(requestDTO);
-                    solicitud.setIdTipoPrestamo(tipoPrestamo.getId());
-                    return solicitudService.createSolicitud(solicitud);
-                })
-                .flatMap(solicitudEnt ->
-                        // Obtén los detalles adicionales para la respuesta.
-                        solicitudService.getDetailsForResponse(solicitudEnt)
-                                .switchIfEmpty(Mono.error(new IllegalStateException("No se encontraron detalles para la solicitud")))
-                                .map(details -> {
+        return solicitudService.procesarSolicitudCompleta(requestDTO)
+                .doOnSuccess(response -> log.info("***** SolicitudController - Solicitud procesada exitosamente."))
+                .doOnError(error -> log.error("***** SolicitudController - Error procesando solicitud: {}", error.getMessage()));
+    }
 
-                                    log.info("***** SolicitudController - Solicitud procesada y lista para la respuesta.");
-                                    return SolicitudMapper.toResponseDto(
-                                            solicitudEnt,
-                                            details.getNombreEstado(),
-                                            details.getNombreTipoPrestamo(),
-                                            solicitudEnt.getDocumentoIdentidad()
-                                    );
-                                })
-                );
+    @Operation(summary = "Comprueba el estado inicial",description = "Verfica si existe el registo PENDIENTE_REVISION existe en la tabla de Estados")
+    @GetMapping("/status")
+    public Mono<ResponseEntity<String>> checkEstado() {
+        return solicitudService.findByNombre()
+                .map(exists -> {
+                    if (exists) {
+                        return ResponseEntity.ok("Si existe estado Inicial");
+                    } else {
+                        return ResponseEntity.status(500).body("Error:  el registro inicial no se encontró");
+                    }
+                })
+                .onErrorResume(e -> Mono.just(ResponseEntity.status(500).body("Error de conexión a la base de datos: " + e.getMessage())));
     }
 }
