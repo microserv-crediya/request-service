@@ -28,4 +28,19 @@ class WebClientTest {
 
         System.out.println("Resultado: " + result);
     }
+
+
+    @Test
+    void testWebClientExistEmail() {
+        assertNotNull(webClient);
+
+        // Test directo
+        String result = webClient.get()
+                .uri("/api/v1/usuarios/email/{email}", "jhon.caraballo@example.com")
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+
+        System.out.println("Resultado: " + result);
+    }
 }

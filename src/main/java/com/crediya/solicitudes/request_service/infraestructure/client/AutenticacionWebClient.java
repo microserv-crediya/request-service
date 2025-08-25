@@ -41,7 +41,7 @@ public class AutenticacionWebClient {
                     }
 
                     boolean result = Boolean.parseBoolean(body.trim());
-                    log.info("Resultado parseado: {}", result);
+                    log.info("Resultado: {}", result);
                     return result;
                 })
                 .doOnError(error -> {    log.error("Error en WebClient: ", error);    })
@@ -50,6 +50,42 @@ public class AutenticacionWebClient {
                     return Mono.just(false);
                 })
                 .doFinally(signal -> {  log.info("=== FIN validarUsuario - Signal: {} ===", signal);  });
+    }
+
+    public Mono<Boolean> comprobarEmail(String email) {
+        log.info("=== INICIO validarEmail ===");
+        log.info("*****Email a validar: {}", email);
+
+        String uri = "/api/v1/usuarios/email/{email}";
+        log.info("*****URI a llamar: {}", uri);
+
+        return autenticacionWebClient.get()
+                .uri(uri, email)
+                .retrieve()
+                .toEntity(String.class) // Cambiar temporalmente para ver
+                .doOnNext(response -> {
+                    log.info("Status Code: {}", response.getStatusCode());
+                    log.info("Headers: {}", response.getHeaders());
+                    log.info("Body: '{}'", response.getBody());
+                })
+                .map(response -> {
+                    String body = response.getBody();
+                    if (body == null) {
+                        log.warn("Body es null");
+                        return false;
+                    }
+                    boolean result = Boolean.parseBoolean(body.trim());
+                    log.info("Resultado: {}", result);
+                    return result;
+                })
+                .doOnError(error -> {
+                    log.error("Error en WebClient: ", error);
+                })
+                .onErrorResume(e -> {
+                    log.warn("Capturando error y retornando false: {}", e.getMessage());
+                    return Mono.just(false);
+                })
+                .doFinally(signal -> {  log.info("=== FIN comprobarEmail - Signal: {} ===", signal);  });
     }
 }
 
