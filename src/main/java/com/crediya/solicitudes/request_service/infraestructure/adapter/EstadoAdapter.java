@@ -21,10 +21,14 @@ public class EstadoAdapter implements EstadoRepositoryPort {
 
     @Override
     public Mono<Estado> save(Estado estado) {
-        EstadoEntity entity = EstadoMapper.toEntity(estado);
-        return repository.save(entity)
+        return Mono.just(estado)
+                .map(EstadoMapper::toEntity)
+                .flatMap(repository::save)
                 .map(EstadoMapper::toDomain);
     }
+
+
+
 
     @Override
     public Mono<Estado> findById(UUID id) {
