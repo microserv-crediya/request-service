@@ -11,6 +11,7 @@ import com.crediya.solicitudes.request_service.infraestructure.dto.SolicitudDeta
 import com.crediya.solicitudes.request_service.infraestructure.entities.EstadoEntity;
 import com.crediya.solicitudes.request_service.infraestructure.entities.TipoPrestamoEntity;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
@@ -55,10 +56,11 @@ public class SolicitudService {
     public Mono<Solicitud> createSolicitud(Solicitud solicitud) {
         log.info("***** SolicitudService - Iniciando el proceso de creación.");
 
-        return autenticacionWebClient.validarUsuario(solicitud.getDocumentoIdentidad())
+        //return autenticacionWebClient.validarUsuario(solicitud.getDocumentoIdentidad())
+        return autenticacionWebClient.comprobarEmail(solicitud.getEmail())
                 .flatMap(usuarioExiste -> {
                     if (Boolean.FALSE.equals(usuarioExiste)) {
-                        return Mono.error(new IllegalArgumentException("El documento proporcionado no existe, no puede continuar con su solicitud."));
+                        return Mono.error(new IllegalArgumentException("El usuario no existe, debe registrarse para continuar con esta solicitud."));
                     }
 
                     return estadoRepositoryPort.findByNombre(ESTADO_INICIAL)

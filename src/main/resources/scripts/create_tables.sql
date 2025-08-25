@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS solicitud (
   fecha_creacion TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   id_estado UUID NOT NULL,
   id_tipo_prestamo UUID NOT NULL,
+  documento_identidad varchar(20) NOT NULL,
   CONSTRAINT fk_solicitud_estados
     FOREIGN KEY (id_estado)
     REFERENCES estados (id_estado)
@@ -47,3 +48,5 @@ CREATE TABLE IF NOT EXISTS solicitud (
     ON DELETE NO ACTION
     ON UPDATE NO ACTION
 );
+CREATE UNIQUE INDEX solicitud_documento_identidad_idx ON public.solicitud USING btree (documento_identidad, id_tipo_prestamo);
+CREATE UNIQUE INDEX solicitud_email_idx ON public.solicitud USING btree (email, id_tipo_prestamo);
