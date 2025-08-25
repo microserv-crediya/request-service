@@ -11,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import java.math.BigDecimal;
@@ -105,5 +106,36 @@ class SolicitudServiceTest {
         verify(solicitudRepositoryPort, never()).save(any(Solicitud.class));
         verify(autenticacionWebClient, times(1)).validarUsuario(anyString());
         verify(estadoRepositoryPort, times(1)).findByNombre(anyString());
+    }
+
+
+    private Solicitud createValidSolicitud() {
+        return Solicitud.builder()
+                .id(UUID.randomUUID())
+                .documentoIdentidad("1234567890")
+                .monto(new BigDecimal("1000000"))
+                .plazo(12)
+                .build();
+    }
+
+
+
+
+    @Test
+    void debeHacerRollbackCuandoOcurreUnErrorEnElServicio() {
+        // Arrange
+        Solicitud solicitud = createValidSolicitud();
+
+        // Simula que el repositorio guarda la solicitud exitosamente
+        when(solicitudRepositoryPort.save(any(Solicitud.class))).thenReturn(Mono.just(solicitud));
+
+        // Simula una operación que falla después de guardar la solicitud
+        when(solicitudRepositoryPort.findById(any(UUID.class))).thenReturn(Mono.error(new RuntimeException("Error simulado para el rollback")));
+
+        // Act & Assert
+        StepVerifier.create(solicitudService.createSolicitudYComprobar(solicitud))
+                .expectErrorMatches(throwable -> throwable instanceof RuntimeException &&
+                        throwable.getMessage().equals("Error simulado para el rollback"))
+                .verify();
     }
 }

@@ -43,6 +43,15 @@ public class SolicitudService {
     }
 
     @Transactional
+    public Mono<Solicitud> createSolicitudYComprobar(Solicitud solicitud) {
+        return solicitudRepositoryPort.save(solicitud)
+                .log("Después de guardar la solicitud") // <-- Añade esto aquí
+                .flatMap(savedSolicitud -> solicitudRepositoryPort.findById(savedSolicitud.getId())
+                        .log("Después de buscar el registro") // <-- Y aquí
+                        .switchIfEmpty(Mono.error(new IllegalStateException("El registro no se pudo encontrar"))));
+    }
+
+    @Transactional
     public Mono<Solicitud> createSolicitud(Solicitud solicitud) {
         log.info("***** SolicitudService - Iniciando el proceso de creación.");
 
