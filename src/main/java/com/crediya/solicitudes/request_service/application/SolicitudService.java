@@ -11,6 +11,7 @@ import com.crediya.solicitudes.request_service.infraestructure.dto.SolicitudDeta
 import com.crediya.solicitudes.request_service.infraestructure.entities.EstadoEntity;
 import com.crediya.solicitudes.request_service.infraestructure.entities.TipoPrestamoEntity;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;

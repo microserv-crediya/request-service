@@ -12,7 +12,7 @@ public class SolicitudMapper {
 
     public static Solicitud toDomain(SolicitudDTO dto) {
         return Solicitud.builder()
-                .id(UUID.randomUUID())
+                //.id(UUID.randomUUID())
                 .monto(dto.getMonto())
                 .plazo(dto.getPlazo())
                 .email(dto.getEmail())
