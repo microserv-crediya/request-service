@@ -11,6 +11,8 @@ import com.crediya.solicitudes.request_service.infraestructure.adapter.mappers.S
 import com.crediya.solicitudes.request_service.infraestructure.adapter.mappers.TipoPrestamoMapper;
 import com.crediya.solicitudes.request_service.infraestructure.client.AutenticacionWebClient;
 import com.crediya.solicitudes.request_service.infraestructure.dto.SolicitudDetallesDTO;
+import com.crediya.solicitudes.request_service.infraestructure.dto.SolicitudRequestDTO;
+import com.crediya.solicitudes.request_service.infraestructure.dto.SolicitudResponseDTO;
 import com.crediya.solicitudes.request_service.infraestructure.entities.EstadoEntity;
 import com.crediya.solicitudes.request_service.infraestructure.entities.SolicitudEntity;
 import com.crediya.solicitudes.request_service.infraestructure.entities.TipoPrestamoEntity;
@@ -49,27 +51,45 @@ public class SolicitudService {
     }
 
 
-    public Mono<Boolean> checkDbConnection() {
+    public Mono<Boolean> findByNombre() {
         return estadoRepositoryPort.findByNombre(ESTADO_INICIAL)
                 .hasElement() // Retorna `true` si encuentra un elemento, `false` si no.
                 .log("***** SolicitudService - Resultado de la prueba de conexión a la base de datos");
     }
 
-    @Transactional
-    public Mono<Solicitud> createSolicitudYComprobar(Solicitud solicitud) {
-        return solicitudRepositoryPort.save(solicitud)
-                .log("Después de guardar la solicitud") // <-- Añade esto aquí
-                .flatMap(savedSolicitud -> solicitudRepositoryPort.findById(savedSolicitud.getId())
-                        .log("Después de buscar el registro") // <-- Y aquí
-                        .switchIfEmpty(Mono.error(new IllegalStateException("El registro no se pudo encontrar")))
-                );
+
+    // EJECUTA TOD EL FLUJO
+    public Mono<SolicitudResponseDTO> procesarSolicitudCompleta(SolicitudRequestDTO requestDTO) {
+        log.info("***** SolicitudService - Iniciando el procesamiento completo de la solicitud.");
+
+        return validarTipoPrestamo(requestDTO.getTipoPrestamo())
+                .flatMap(tipoPrestamo -> crearSolicitudConTipo(requestDTO, tipoPrestamo))
+                .flatMap(this::generarRespuestaCompleta)
+                .doOnError(error -> log.error("***** ERROR en el flujo completo de solicitud: {}", error.getMessage()));
+    }
+
+    // VALIDAR QUE EL TIPO DE PRÉSTAMO EXISTE
+    private Mono<TipoPrestamo> validarTipoPrestamo(String nombreTipoPrestamo) {
+        return tipoPrestamoRepositoryPort.findByNombre(nombreTipoPrestamo)
+                .switchIfEmpty(Mono.error(new IllegalArgumentException(
+                        "El tipo de préstamo '" + nombreTipoPrestamo.toUpperCase() + "' no existe.")))
+                .doOnNext(tipo -> log.info("***** SolicitudService - Tipo de préstamo validado: {}", tipo.getNombre()));
+    }
+
+    // CREAR SOLICITUD CON TIPO DE PRÉSTAMO
+    private Mono<Solicitud> crearSolicitudConTipo(SolicitudRequestDTO requestDTO, TipoPrestamo tipoPrestamo) {
+        log.info("***** SolicitudService - Creando solicitud con tipo de préstamo: {}", tipoPrestamo.getNombre());
+
+        Solicitud solicitud = SolicitudMapper.toDomainRequest(requestDTO);
+        solicitud.setIdTipoPrestamo(tipoPrestamo.getId());
+
+        return createSolicitud(solicitud);
     }
 
     @Transactional
     public Mono<Solicitud> createSolicitud(Solicitud solicitud) {
         log.info("***** SolicitudService - Iniciando el proceso de creación.");
 
-        //return autenticacionWebClient.validarUsuario(solicitud.getDocumentoIdentidad())
         return autenticacionWebClient.comprobarEmail(solicitud.getEmail())
                 .flatMap(usuarioExiste -> {
                     if (Boolean.FALSE.equals(usuarioExiste)) {
@@ -79,12 +99,11 @@ public class SolicitudService {
                     return estadoRepositoryPort.findByNombre(ESTADO_INICIAL)
                             .log("***** SolicitudService - Buscando el estado inicial: " + ESTADO_INICIAL)
                             .switchIfEmpty(Mono.error(new IllegalStateException("El estado inicial '" + ESTADO_INICIAL + "' no se encontró.")))
-
                             .flatMap(estado -> {
                                 solicitud.setIdEstado(estado.getId());
                                 log.info("***** SolicitudService - Asignando el estado inicial a la solicitud.");
                                 return solicitudRepositoryPort.save(solicitud)
-                                .log("***** SolicitudService - Guardando la solicitud.");
+                                        .log("***** SolicitudService - Guardando la solicitud.");
                             });
                 })
                 .doOnError(error -> log.error("***** ERROR en el flujo de solicitud: " + error.getMessage()));
@@ -101,6 +120,23 @@ public class SolicitudService {
                         .nombreTipoPrestamo(tuple.getT2().getNombre())
                         .build());
     }
+    // GENERAR RESPUESTA COMPLETA CON DETALLES
+    private Mono<SolicitudResponseDTO> generarRespuestaCompleta(Solicitud solicitud) {
+        log.info("***** SolicitudService - Generando respuesta completa para solicitud ID: {}", solicitud.getId());
+
+        return getDetailsForResponse(solicitud)
+                .switchIfEmpty(Mono.error(new IllegalStateException("No se encontraron detalles para la solicitud")))
+                .map(details -> {
+                    log.info("***** SolicitudService - Detalles obtenidos, creando DTO de respuesta.");
+                    return SolicitudMapper.toResponseDto(
+                            solicitud,
+                            details.getNombreEstado(),
+                            details.getNombreTipoPrestamo(),
+                            solicitud.getDocumentoIdentidad()
+                    );
+                });
+    }
+
 
 
     public Mono<Estado> findByNameEstado(String name) {
