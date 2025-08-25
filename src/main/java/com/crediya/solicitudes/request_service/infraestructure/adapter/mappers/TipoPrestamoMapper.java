@@ -2,7 +2,10 @@ package com.crediya.solicitudes.request_service.infraestructure.adapter.mappers;
 
 import com.crediya.solicitudes.request_service.domain.model.TipoPrestamo;
 import com.crediya.solicitudes.request_service.infraestructure.entities.TipoPrestamoEntity;
+import org.springframework.stereotype.Component;
 
+
+@Component
 public class TipoPrestamoMapper {
 
     /**

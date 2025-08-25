@@ -2,9 +2,12 @@ package com.crediya.solicitudes.request_service.infraestructure.controllers;
 
 import com.crediya.solicitudes.request_service.application.SolicitudService;
 import com.crediya.solicitudes.request_service.domain.model.Solicitud;
+import com.crediya.solicitudes.request_service.domain.model.TipoPrestamo;
 import com.crediya.solicitudes.request_service.infraestructure.adapter.mappers.SolicitudMapper;
 import com.crediya.solicitudes.request_service.infraestructure.dto.SolicitudDTO;
+import com.crediya.solicitudes.request_service.infraestructure.dto.SolicitudRequestDTO;
 import com.crediya.solicitudes.request_service.infraestructure.dto.SolicitudResponseDTO;
+import com.crediya.solicitudes.request_service.infraestructure.entities.SolicitudEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -23,7 +26,6 @@ public class SolicitudController {
 
     // Declaración estándar y correcta del logger
     private static final Logger log = LoggerFactory.getLogger(SolicitudController.class);
-
     private final SolicitudService solicitudService;
 
     public SolicitudController(SolicitudService solicitudService) {
@@ -40,26 +42,30 @@ public class SolicitudController {
                     @ApiResponse(responseCode = "400", description = "Solicitud inválida. El tipo de préstamo no existe.")
             }
     )
-    public Mono<SolicitudResponseDTO> createSolicitud(@RequestBody SolicitudDTO requestDTO) {
+    public Mono<SolicitudResponseDTO> createSolicitud(@RequestBody SolicitudRequestDTO requestDTO) {
         log.info("***** SolicitudController - Recibiendo una nueva solicitud de préstamo.");
 
-        Solicitud solicitud = SolicitudMapper.toDomain(requestDTO);
-
-        return solicitudService.createSolicitud(solicitud)
-                .flatMap(savedSolicitud ->
-                        solicitudService.getDetailsForResponse(savedSolicitud)
+        return solicitudService.findByNamePrestamo(requestDTO.getTipoPrestamo())
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("El tipo de préstamo '" + requestDTO.getTipoPrestamo() + "' no existe.")))
+                .flatMap(tipoPrestamo -> {
+                    Solicitud solicitud = SolicitudMapper.toDomainRequest(requestDTO);
+                    solicitud.setIdTipoPrestamo(tipoPrestamo.getId());
+                    return solicitudService.createSolicitud(solicitud);
+                })
+                .flatMap(solicitudEnt ->
+                        // Obtén los detalles adicionales para la respuesta.
+                        solicitudService.getDetailsForResponse(solicitudEnt)
                                 .switchIfEmpty(Mono.error(new IllegalStateException("No se encontraron detalles para la solicitud")))
                                 .map(details -> {
+
                                     log.info("***** SolicitudController - Solicitud procesada y lista para la respuesta.");
                                     return SolicitudMapper.toResponseDto(
-                                            savedSolicitud,
+                                            solicitudEnt,
                                             details.getNombreEstado(),
                                             details.getNombreTipoPrestamo(),
-                                            solicitud.getDocumentoIdentidad()
+                                            solicitudEnt.getDocumentoIdentidad()
                                     );
                                 })
                 );
     }
-
-
 }
