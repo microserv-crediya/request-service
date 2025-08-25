@@ -2,7 +2,9 @@ package com.crediya.solicitudes.request_service.infraestructure.adapter.mappers;
 
 import com.crediya.solicitudes.request_service.domain.model.Estado;
 import com.crediya.solicitudes.request_service.infraestructure.entities.EstadoEntity;
+import org.springframework.stereotype.Component;
 
+@Component
 public class EstadoMapper {
 
     /**

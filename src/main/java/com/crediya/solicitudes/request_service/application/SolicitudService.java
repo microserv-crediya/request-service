@@ -6,9 +6,13 @@ import com.crediya.solicitudes.request_service.domain.model.TipoPrestamo;
 import com.crediya.solicitudes.request_service.domain.repository.SolicitudRepositoryPort;
 import com.crediya.solicitudes.request_service.domain.repository.TipoPrestamoRepositoryPort;
 import com.crediya.solicitudes.request_service.domain.repository.EstadoRepositoryPort;
+import com.crediya.solicitudes.request_service.infraestructure.adapter.mappers.EstadoMapper;
+import com.crediya.solicitudes.request_service.infraestructure.adapter.mappers.SolicitudMapper;
+import com.crediya.solicitudes.request_service.infraestructure.adapter.mappers.TipoPrestamoMapper;
 import com.crediya.solicitudes.request_service.infraestructure.client.AutenticacionWebClient;
 import com.crediya.solicitudes.request_service.infraestructure.dto.SolicitudDetallesDTO;
 import com.crediya.solicitudes.request_service.infraestructure.entities.EstadoEntity;
+import com.crediya.solicitudes.request_service.infraestructure.entities.SolicitudEntity;
 import com.crediya.solicitudes.request_service.infraestructure.entities.TipoPrestamoEntity;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -26,14 +30,22 @@ public class SolicitudService {
     private final AutenticacionWebClient autenticacionWebClient;
     private final EstadoRepositoryPort estadoRepositoryPort;
     private final TipoPrestamoRepositoryPort tipoPrestamoRepositoryPort;
+    private final SolicitudMapper solicitudMapper;
+    private final EstadoMapper estadoMapper;
+    private final TipoPrestamoMapper tipoPrestamoMapper;
+
     private static final String ESTADO_INICIAL = "PENDIENTE_REVISION";
 
     public SolicitudService(SolicitudRepositoryPort solicitudRepositoryPort, AutenticacionWebClient autenticacionWebClient,
-                            EstadoRepositoryPort estadoRepositoryPort, TipoPrestamoRepositoryPort tipoPrestamoRepositoryPort) {
+                            EstadoRepositoryPort estadoRepositoryPort, TipoPrestamoRepositoryPort tipoPrestamoRepositoryPort,
+                            SolicitudMapper solicitudMapper, EstadoMapper estadoMapper, TipoPrestamoMapper tipoPrestamoMapper) {
         this.solicitudRepositoryPort = solicitudRepositoryPort;
         this.autenticacionWebClient = autenticacionWebClient;
         this.estadoRepositoryPort = estadoRepositoryPort;
         this.tipoPrestamoRepositoryPort = tipoPrestamoRepositoryPort;
+        this.solicitudMapper = solicitudMapper;
+        this.estadoMapper = estadoMapper;
+        this.tipoPrestamoMapper = tipoPrestamoMapper;
     }
 
 
@@ -49,7 +61,8 @@ public class SolicitudService {
                 .log("Después de guardar la solicitud") // <-- Añade esto aquí
                 .flatMap(savedSolicitud -> solicitudRepositoryPort.findById(savedSolicitud.getId())
                         .log("Después de buscar el registro") // <-- Y aquí
-                        .switchIfEmpty(Mono.error(new IllegalStateException("El registro no se pudo encontrar"))));
+                        .switchIfEmpty(Mono.error(new IllegalStateException("El registro no se pudo encontrar")))
+                );
     }
 
     @Transactional
@@ -89,5 +102,13 @@ public class SolicitudService {
                         .build());
     }
 
+
+    public Mono<Estado> findByNameEstado(String name) {
+        return estadoRepositoryPort.findByNombre(name);
+    }
+
+    public Mono<TipoPrestamo> findByNamePrestamo(String name) {
+        return tipoPrestamoRepositoryPort.findByNombre(name);
+    }
 
 }

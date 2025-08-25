@@ -2,6 +2,7 @@ package com.crediya.solicitudes.request_service.infraestructure.controllers;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -19,6 +20,14 @@ public class GlobalExceptionHandler {
     public Mono<String> handleIllegalArgumentException(IllegalArgumentException ex) {
         log.warn("Solicitud inválida: {}", ex.getMessage());
         return Mono.just(ex.getMessage());
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public Mono<String> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
+        String mensaje = "Ha ocurrido un error de integridad de datos. Posiblemente, el registro que intentas crear ya existe.";
+        log.error(mensaje ,": {} " , ex.getMessage());
+        return Mono.just(mensaje);
     }
 
     @ExceptionHandler(IllegalStateException.class)

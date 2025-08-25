@@ -2,11 +2,8 @@ package com.crediya.solicitudes.request_service.infraestructure.adapter;
 
 import com.crediya.solicitudes.request_service.domain.model.Solicitud;
 import com.crediya.solicitudes.request_service.domain.repository.SolicitudRepositoryPort;
-import com.crediya.solicitudes.request_service.infraestructure.adapter.mappers.EstadoMapper;
 import com.crediya.solicitudes.request_service.infraestructure.adapter.mappers.SolicitudMapper;
 import com.crediya.solicitudes.request_service.infraestructure.adapter.repository.SolicitudR2dbcRepository;
-import com.crediya.solicitudes.request_service.infraestructure.entities.EstadoEntity;
-import com.crediya.solicitudes.request_service.infraestructure.entities.SolicitudEntity;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Flux;

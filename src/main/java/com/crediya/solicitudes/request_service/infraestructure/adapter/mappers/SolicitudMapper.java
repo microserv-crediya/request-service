@@ -1,13 +1,16 @@
 package com.crediya.solicitudes.request_service.infraestructure.adapter.mappers;
 
 import com.crediya.solicitudes.request_service.domain.model.Solicitud;
+import com.crediya.solicitudes.request_service.infraestructure.dto.SolicitudRequestDTO;
 import com.crediya.solicitudes.request_service.infraestructure.entities.SolicitudEntity;
 import com.crediya.solicitudes.request_service.infraestructure.dto.SolicitudDTO;
 ;
 import com.crediya.solicitudes.request_service.infraestructure.dto.SolicitudResponseDTO;
+import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
+@Component
 public class SolicitudMapper {
 
     public static Solicitud toDomain(SolicitudDTO dto) {
@@ -21,6 +24,17 @@ public class SolicitudMapper {
                 .documentoIdentidad(dto.getDocumentoIdentidad())
                 .build();
     }
+
+    public static Solicitud toDomainRequest(SolicitudRequestDTO dto) {
+        return Solicitud.builder()
+                //.id(UUID.randomUUID())
+                .monto(dto.getMonto())
+                .plazo(dto.getPlazo())
+                .email(dto.getEmail())
+                .documentoIdentidad(dto.getDocumentoIdentidad())
+                .build();
+    }
+
 
     //Convierte un DTO de respuesta a una entidad de dominio.
     public static Solicitud toDomain(SolicitudEntity entity) {
